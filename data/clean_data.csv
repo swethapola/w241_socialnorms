@@ -1,0 +1,7 @@
+id,year,gender,transfer,mental_health,social_distancing,drag_50,sexist_comment,support_eating,stop_svsh,receive_info,social_media_year,asian,black,latino,white,undergrad_student,1st_year,2nd_year,3rd_year,some_college,read_daily,read_daily_more,read_weekly,write_daily,write_less_weekly,outcome,treatment,recall
+R_31cuvH38jf2jrSO,1978,0,0,95,50,50,75,80,60,0,underclassmen_control,0,0,0,1,1,0,1,0,1,1,0,0,0,1,31,0,1
+R_2fiX6Cr8V61UoyO,2000,0,1,80,10,50,25,60,50,0,upperclassmen_control,1,0,0,0,1,0,0,1,1,0,1,0,0,1,41,0,1
+R_3DnYKTNotWcDO2J,1996,1,1,72,15,50,40,30,91,0,underclassmen_treatment,0,1,0,0,1,1,0,0,1,0,1,0,0,1,0,1,1
+R_2BfIDrbZGrMAQDL,1996,0,1,88,20,50,90,71,62,0,underclassmen_control,0,0,1,0,1,1,0,0,1,0,1,0,0,1,29,0,0
+R_1F3Yr6S1FAsxpVp,2003,1,1,78,81,50,74,83,78,0,underclassmen_treatment,0,0,0,1,1,0,1,0,1,1,0,0,0,1,13,1,1
+R_1MXLFRa4rkKt20c,1999,0,0,60,66,50,68,73,69,0,underclassmen_treatment,0,0,0,1,1,0,1,0,1,0,0,1,1,0,22,1,1
