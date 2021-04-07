@@ -1,0 +1,78 @@
+---
+title: "Pilot Data Initial Analysis"
+author: "Shalini Kunapuli, Anusha Mohan, Swetha Pola"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+data <- read.csv("Social+Media+Experiment_March+24,+2021_19.23.csv")
+#head(data)
+```
+
+```{r}
+### columns we are interested in right now:
+## Q74_1, Q78_1, FL_4_DO, FL_27_DO
+
+# drop everything before row 11 because those were our own trials
+subset <- data[-c(1:10), c('Q74_1', 'Q1', 'Q2', 'FL_4_DO', 'FL_27_DO', 'Q72', 'Q81')]
+
+subset <- subset[(subset$Q74_1 != ""), ]
+
+subset
+```
+
+
+From observation of the data, it looks like: 
+
+for the FL_27_DO column:
+- treatment: FL_32
+- control: FL_28
+
+
+for the FL_4_DO column: 
+- treatment: FL_17
+- control: FL_16
+
+
+
+```{r}
+treat <- subset[(subset$FL_27_DO == "FL_32" | subset$FL_4_DO == "FL_17"), ]
+
+control <- subset[(subset$FL_27_DO == "FL_28" | subset$FL_4_DO == "FL_16"), ]
+
+dim(treat)
+dim(control)
+dim(subset)
+
+treat$Q74_1 <- as.numeric(treat$Q74_1)
+control$Q74_1 <- as.numeric(control$Q74_1)
+subset$Q74_1 <- as.numeric(subset$Q74_1)
+
+
+
+treat$outcome <- abs(91 - treat$Q74_1)
+control$outcome <- abs(91 - control$Q74_1)
+subset$outcome <- abs(91 - subset$Q74_1)
+
+```
+
+
+```{r}
+hist(treat$outcome, xlab = "absolute difference of % from 91", main = "Treatment Group Histogram")
+
+hist(control$outcome, xlab = "absolute difference of % from 91", main = "Control Group Histogram")
+
+hist(subset$outcome, xlab = "absolute difference of % from 91", main = "Both Treatment and Control Histogram")
+
+
+```
+
+
+
+
+
