@@ -1,0 +1,104 @@
+---
+title: "w241_modeling"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data <- read.csv("w241_socialnorms/data/clean_data.csv")
+data
+```
+
+
+## Main Outcome as Outcome Variable
+
+```{r}
+data$page_times <- data$page_1 + data$page_2
+data$first_second_year <- data$X1st_year + data$X2nd_year
+
+```
+
+
+```{r}
+outcome_lm0 <- lm(outcome ~ treatment, data = data)
+summary(outcome_lm0)
+```
+
+```{r}
+outcome_lm1 <- lm(outcome ~ treatment + gender, data = data)
+summary(outcome_lm1)
+```
+
+
+```{r}
+outcome_lm2 <- lm(outcome ~ treatment * gender, data = data)
+summary(outcome_lm2)
+```
+
+
+```{r}
+outcome_lm3 <- lm(outcome ~ treatment + first_second_year * transfer, data = data)
+summary(outcome_lm3)
+```
+
+
+```{r}
+outcome_lm4 <- lm(outcome ~ treatment + page_times, data = data)
+summary(outcome_lm4)
+```
+
+
+
+```{r}
+outcome_lm5 <- lm(outcome ~ treatment * gender + page_times, data = data)
+summary(outcome_lm5)
+```
+
+
+```{r}
+outcome_lm6 <- lm(outcome ~ treatment + first_second_year * transfer + page_times, data = data)
+summary(outcome_lm6)
+```
+
+
+```{r}
+outcome_lm7 <- lm(outcome ~ treatment * gender + first_second_year * transfer + page_times, data = data)
+summary(outcome_lm7)
+```
+
+
+## Stargazer
+```{r}
+cov0 <- vcovHC(outcome_lm0, type = "HC1")
+robust_se0 <- sqrt(diag(cov0))
+
+cov4 <- vcovHC(outcome_lm4, type = "HC1")
+robust_se4 <- sqrt(diag(cov4))
+
+cov5 <- vcovHC(outcome_lm5, type = "HC1")
+robust_se5 <- sqrt(diag(cov5))
+
+cov6 <- vcovHC(outcome_lm6, type = "HC1")
+robust_se6 <- sqrt(diag(cov6))
+
+cov7 <- vcovHC(outcome_lm7, type = "HC1")
+robust_se7 <- sqrt(diag(cov7))
+
+# Produce initial stargazer table
+# Copy results to regression-tables.tex, 
+# Change covariate names, etc, then produce 
+# regression-tables.pdf which will knit into
+# draft report
+stargazer(outcome_lm0,
+          outcome_lm4,
+          outcome_lm5,
+          outcome_lm6, 
+          outcome_lm7, se = list(robust_se0, robust_se4, robust_se5, robust_se6, robust_se7),
+          notes.append = TRUE, notes.align = "l",
+          notes = "This will be replaced")
+
+sandwich::vcovHC
+```

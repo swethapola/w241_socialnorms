@@ -1,0 +1,324 @@
+---
+title: "w241 project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data <- read.csv("w241_socialnorms/data/clean_data.csv")
+data
+```
+
+```{r}
+colnames(data)
+```
+
+```{r}
+data[data$treatment == 0 & data$recall == 1,]
+
+```
+
+
+```{r}
+data$gender
+```
+
+
+## Data Exploration
+
+Distributions
+```{r}
+hist(data$outcome)
+hist(data$page_1)
+hist(data$page_2)
+```
+
+treatment group
+```{r}
+t_group <- data[data$treatment == 1,]
+hist(t_group$outcome)
+hist(t_group$page_1)
+hist(t_group$page_2)
+```
+
+control group
+```{r}
+c_group <- data[data$treatment == 0,]
+hist(c_group$outcome)
+hist(c_group$page_1)
+hist(c_group$page_2)
+```
+
+
+
+Regressions to test out:
+- outcome ~
+  - treatment
+  - treatment + gender
+  - treatment + 1st/2nd/transfer
+  - treatment + race
+  - treatment + recall
+  - treatment + gender + 1st/2nd/transfer
+  - treatment + gender + 1st/2nd/transfer + race
+  - treatment + gender + 1st/2nd/transfer + race + political affiliation
+  - treatment + gender + 1st/2nd/transfer + race + political affiliation + recall
+
+
+- stop_svsh ~
+  - treatment
+  - treatment + gender
+  - treatment + gender + 1st/2nd
+
+
+
+- sexist_comment ~
+  - treatment
+  - treatment + gender
+  
+
+(not as significant but can use it to compare thoughts vs actions)
+- receive_info ~
+
+## Main Outcome as Outcome Variable
+
+```{r}
+outcome_lm0 <- lm(outcome ~ treatment, data = data)
+summary(outcome_lm0)
+```
+
+```{r}
+data$page_times <- data$page_1 + data$page_2
+
+outcome_lm00 <- lm(outcome ~ treatment + page_times, data = data)
+summary(outcome_lm00)
+```
+
+
+
+
+```{r}
+outcome_lm1 <- lm(outcome ~ treatment + gender, data = data)
+summary(outcome_lm1)
+```
+
+```{r}
+outcome_lm11 <- lm(outcome ~ treatment * gender, data = data)
+summary(outcome_lm11)
+```
+
+
+
+```{r}
+data$first_second_year <- data$X1st_year + data$X2nd_year
+
+outcome_lm2 <- lm(outcome ~ treatment + first_second_year * transfer, data = data)
+summary(outcome_lm2)
+```
+
+```{r}
+outcome_lm3 <- lm(outcome ~ treatment + asian + black + latino + native.hawaiian.or.pacific.islander + white + other. , data = data)
+summary(outcome_lm3)
+```
+
+```{r}
+# can't do this because it's a bad control
+#outcome_lm4 <- lm(outcome ~ treatment * recall , data = data)
+#summary(outcome_lm4)
+```
+
+```{r}
+outcome_lm5 <- lm(outcome ~ treatment + gender + first_second_year * transfer  , data = data)
+summary(outcome_lm5)
+```
+
+```{r}
+outcome_lm6 <- lm(outcome ~ treatment + gender + first_second_year * transfer + asian + black + latino + native.hawaiian.or.pacific.islander + white + other., data = data)
+summary(outcome_lm6)
+```
+
+
+```{r}
+outcome_lm7 <- lm(outcome ~ treatment * gender + page_times + first_second_year * transfer , data = data)
+summary(outcome_lm7)
+```
+
+
+
+
+
+## Stargazer
+
+```{r}
+cov0 <- vcovHC(outcome_lm0, type = "HC1")
+robust_se0 <- sqrt(diag(cov0))
+
+cov1 <- vcovHC(outcome_lm1, type = "HC1")
+robust_se1 <- sqrt(diag(cov1))
+
+cov2 <- vcovHC(outcome_lm2, type = "HC1")
+robust_se2 <- sqrt(diag(cov2))
+
+cov5 <- vcovHC(outcome_lm5, type = "HC1")
+robust_se5 <- sqrt(diag(cov5))
+
+# Produce initial stargazer table
+# Copy results to regression-tables.tex, 
+# Change covariate names, etc, then produce 
+# regression-tables.pdf which will knit into
+# draft report
+stargazer(outcome_lm0,
+          outcome_lm1,
+          outcome_lm2,
+          outcome_lm5, se = list(robust_se0, robust_se1, robust_se2, robust_se5),
+          notes.append = TRUE, notes.align = "l",
+          notes = "This will be replaced")
+
+sandwich::vcovHC
+```
+
+
+
+
+
+
+
+
+```{r}
+# who in treatment recalled the graphic?
+nrow(data[data$treatment == 1 & data$recall == 1, ])
+
+nrow(data[data$treatment == 1 & data$recall == 0, ])
+```
+
+
+## t test + power analysis
+```{r}
+ttest <- t.test(outcome ~ treatment, data = data)
+d <- 2 * ttest$statistic /sqrt(nrow(data)-2)
+
+cohend <- d^2 / 4
+```
+
+
+```{r}
+# Power Test Method 2 (via power t-test) # use in paper
+library(pwr)
+
+data <- data.table(data)
+treatment_group_ate <- data[, .(mean_outcome = mean(outcome)), keyby = treatment][,diff(mean_outcome)]
+treatment_group_ate
+treated <- data[treatment == 1, .N]
+control <- data[treatment == 0, .N]
+
+pwr.t2n.test(n1 = control, n2= treated, d = cohend, sig.level = 0.05, power = NULL)
+```
+
+
+
+
+```{r}
+treatment <- data[data$treatment == 1,]
+control <- data[data$treatment == 0,]
+
+
+t.test(treatment$recall, control$recall)
+```
+
+
+
+
+
+
+
+## Playing Around
+
+
+```{r}
+data$read_weekly
+
+#data$read_daily_more
+```
+
+
+
+
+```{r}
+# cis men 1, other 0
+lm0 <- lm(outcome ~ treatment * recall, data = data)
+summary(lm0)
+
+data$outcome
+```
+
+
+```{r}
+lm1 <- lm(outcome ~ treatment + gender, data = data)
+summary(lm1)
+```
+
+
+```{r}
+# difference in the two groups based on treatment?
+t.test(outcome ~ treatment, data = data)
+
+2t/sqrt(n-2)
+
+lm2 <- lm(outcome ~ treatment, data = data)
+summary(lm2)
+
+```
+
+```{r}
+lm3 <- lm(outcome ~ treatment + year , data = data)
+summary(lm3)
+
+
+
+lm4 <- lm(outcome ~ treatment + X1st_year + X2nd_year , data = data)
+summary(lm4)
+```
+
+year???
+
+```{r}
+#data$X1st_year
+#data$X2nd_year
+
+data$first_half_college <- data$X1st_year + data$X2nd_year
+
+lm4 <- lm(outcome ~ treatment + first_half_college , data = data)
+summary(lm4)
+
+```
+
+
+```{r}
+glm1 <- glm(outcome ~ gender + treatment, family=poisson, data = data)
+
+summary(glm1)
+
+```
+
+
+```{r}
+hist(data$outcome)
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
