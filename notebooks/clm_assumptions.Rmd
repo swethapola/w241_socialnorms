@@ -1,0 +1,150 @@
+---
+title: "w241_clm_assumptions"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r setup, message=F, warning=F, results=F}
+library(tidyverse)
+library(stargazer)
+data <- read.csv("w241_socialnorms/data/clean_data.csv")
+head(data)
+```
+
+
+
+
+```{r initial-models}
+
+
+data$first_second_year <- data$X1st_year + data$X2nd_year
+
+outcome_lm5 <- lm(outcome ~ treatment + gender + first_second_year * transfer  , data = data)
+summary(outcome_lm5)
+
+```
+
+The 5 CLM Assumptions that we want to evaluate:
+* IID Data
+* No perfect collinearity
+* Linear Conditional Expectation
+* Homoskedastic errors
+* Normally distributed errors
+
+Let's evaluate these assumptions for the State COVID Policy dataset.
+
+1. IID Data
+
+
+2. No perfect collinearity
+```{r}
+summary(outcome_lm5)
+cor(data$treatment, data$gender)
+cor(data$treatment, data$first_second_year)
+cor(data$treatment, data$transfer)
+cor(data$gender, data$first_second_year)
+cor(data$gender, data$transfer)
+cor(data$first_second_year, data$transfer)
+
+
+
+
+```
+
+When looking at our main model, we want to check that the regressors are not collinear or near collinear. If we had near perfect collinearity, we would have large standard errors on collinear features. Looking at our standard errors, none of them are huge, so we lean towards the idea of not having near perfect collinearity.
+We can also check the correlation between each of the regressors. We get values between -0.13 and 0.06, which aren't too high. If we had near perfect collinearity between different variables, the correlation between them would be much higher. We do not see this so we can say that the no perfect collinearity condition is met - we will not have to drop any of our variables. If our data was perfectly collinear, the variables would not have a unique solution and we would not be able to generate estimates of the regression coefficients without dropping some of the variables. 
+
+
+3. Linear Conditional Expectation
+```{r}
+#lm3 <- lm(log(Case.Rate.per.100000.in.Last.7.Days) ~ SIP + workplaces_2020.10.10 + NoFaceMask, data = data)
+model_predictions <- predict(outcome_lm5)
+model_residuals <- resid(outcome_lm5)
+
+
+
+plot_model_3a <- data %>%  
+  ggplot(aes(x = model_predictions, y = model_residuals)) + 
+  geom_point() + stat_smooth() 
+
+#plot_model_3b <- data %>% 
+#  ggplot(aes(x = gender, y = model_3_residuals)) + 
+#  geom_point() + stat_smooth() +
+#  xlab('Workplace Mobility') +
+#  ylab("Model 3 Residuals")
+
+#plot_model_3c <- data %>% 
+#  ggplot(aes(x = first_second_year, y = model_3_residuals)) + 
+#  geom_point() + stat_smooth()
+
+#plot_model_3d <- data %>%  
+#  ggplot(aes(x = transfer, y = model_3_residuals)) + 
+#  geom_point() + stat_smooth() +
+#  xlab('Model 3 Predictions') +
+#  ylab('Model 3 Residuals')
+
+plot_model_3a
+#plot_model_3b
+#plot_model_3c
+#plot_model_3d
+
+#ggsave(plot = plot_model_3b, filename = "../reports/figures/LCE_mob_resid.png")
+#ggsave(plot = plot_model_3d, filename = "../reports/figures/LCE_pred_resid.png")
+
+
+```
+
+Ideally if this condition is satisfied, we will see a linear relationship between the predictions and residuals, represented through the plots. Two of our variables (SIP and NoFaceMask) are indicator variables so the relationship described related to these two does not make sense (there won't be a good linear relationship from these variables). When looking at the first plot above (workplace mobility), we see a non-linear relationship - the plot curves around -25 to -15 values of mobility. Looking at the overall model predictions, the relationship is curved as well. We have a few areas where it is linear but the blue line looks more cubic. As a result, this assumption is not met and we do not have linear conditional expectation. The model that we have fitted assumes that the data is linear but the estimated coefficient does not match the relationship in the data. It is possible that a linear relationship/model is not the best way to represent the data. In the future when we model with this data, we may want to consider transforming the data so there is a linear conditional expectation. 
+
+
+4. Homoskedastic errors
+
+To evaluate homoskedastic errors, we will conduct the Ocular test (to look for fanning out of the data acros the predicted values) and the Breusch-Pagan test (a statistical test with a p-value to evaluate the errors).
+
+```{r}
+# Ocular Test
+# use the same plot from lce
+ggplot(aes(x = predict(outcome_lm5), y = resid(outcome_lm5)), data = data) + 
+  geom_point() +
+  xlab('Model 3 Predictions')
+
+
+plot(lm3, which=3)
+```
+
+```{r}
+# Breusch-Pagan test
+lmtest::bptest(outcome_lm5)
+```
+
+When data has different conditional variance we say that it is heteroskedastic. We will conduct the Ocular/Eye test by plotting the predictions versus the residuals to see the errors and conditional variance, thus we can inspect the second plot in We want to check if this data fans out or not. Based on the plot above, our data does seem to fan out. As we move from left to right on the plot, the spread of the points increases. We also don't see the errors evenly distributed. Instead there are a lot of points in the center area of the plot and fewer points as we get to the sides of the plot. When we conduct the Breusch-Pagan test, we get a p-value of 0.02974. This is a small p-value (less than 0.05 which is our typical cutoff), so we can reject the null hypothesis that the error variances are all equal. Both of these results point towards the same result: that our data does not have homoskedastic errors, we have heteroskedastic errors. Since the data is heteroskedastic, the error variance is different for the different parts of the x range. We will have bias in the standard errors of our model and our model may miss things in certain areas because it cannot detect the bias effect. We may get a p-value that is smaller than it should be. As we move forward with this data and our model, we should consider the effect of heteroskedastic errors. To account for this, we will proceed with using robust standard errors.
+
+
+5. Normally distributed errors
+```{r}
+norm_error1 <- ggplot(data = data) +
+  geom_histogram(mapping = aes(x = resid(outcome_lm5))) +
+  ggtitle("Distribution of Residuals for Model") +
+  xlab('Model Residuals') +
+  ylab('Count')
+
+
+norm_error2 <- ggplot(data = data, aes(sample = resid(outcome_lm5))) + stat_qq() + stat_qq_line()
+
+norm_error1
+norm_error2
+
+#ggsave(plot = norm_error1, filename = "../reports/figures/norm_error1.png")
+#ggsave(plot = norm_error2, filename = "../reports/figures/norm_error2.png")
+
+```
+
+To evaluate this assumption, we will want to plot a histogram of the errors and see what the distribution looks like. When plotting our residuals for this model, we get a distribution that is slightly skewed (with a right tail) but is tending towards a normal distribution. As an extra check, we can also plot a qqplot to see how normal the residuals are. We can see the points and the line. The points are not linear and do not follow the given line on either end of the data. As a result, we may want to be careful because this assumption isn't perfectly satisfied. If our random errors are not from a normal distribution, our model can make incorrect decisions more or less frequently than what our inferences show. We will want to keep this assumption in mind, especially when determining the practical significance of our model results. 
+
+
