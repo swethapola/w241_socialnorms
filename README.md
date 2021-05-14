@@ -7,6 +7,8 @@ You'll find our data in the data folder & code is in the notebooks folder. All h
 
 Finally, here's a link to the deck: https://docs.google.com/presentation/d/1iiEUt_eS4zOmih-S8vITCW0mUbo1r4raP8LRN9f3tYo/edit#slide=id.gb0a679854f_0_41
 
+We are humbled to have worked with the PATH To Care Center on campus, without whose domain expertise and mentorship, we would not have produced this work. 
+
 PATH To Care Center Resources
 
 care.berkeley.edu
